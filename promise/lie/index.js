@@ -44,6 +44,7 @@ Promise.prototype.finally = function (callback) {
 		function yes() {
 			return value
 		}
+		// finally调用完之后接着把前面传过来的值往后传
 		return p.resolve(callback()).then(yes)
 	}
 	function reject(reason) {
@@ -95,9 +96,11 @@ function QueueItem(promise, onFulfilled, onRejected) {
 	}
 }
 QueueItem.prototype.callFulfilled = function (value) {
+	// 相当于同步返回 promise 实例
 	handlers.resolve(this.promise, value)
 }
 QueueItem.prototype.otherCallFulfilled = function (value) {
+	// 包装到异步队列
 	unwrap(this.promise, this.onFulfilled, value)
 }
 QueueItem.prototype.callRejected = function (value) {
@@ -328,11 +331,35 @@ function race(iterable) {
 	}
 }
 
-new Promise(resolve => {
+const p = new Promise(resolve => {
 	console.log(1)
+	// setTimeout(() => {
 	resolve(3)
+	// }, 10)
 	Promise.resolve().then(() => console.log(4))
-}).then(num => {
-	console.log(num)
 })
+
+p.then(num => {
+	console.log(`打印3：${num}`)
+	return 5
+})
+	.finally(() => {
+		console.log('finally')
+		return 7
+	})
+	.then(num => {
+		console.log(`打印5：${num}`)
+	})
+
 console.log(2)
+
+p.then(num => {
+	console.log(`打印3：${num}`)
+	return 6
+})
+	.finally(() => {
+		console.log('-------')
+	})
+	.then(num => {
+		console.log(`打印6：${num}`)
+	})
