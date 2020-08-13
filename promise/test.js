@@ -1,3 +1,6 @@
+// Promises/A+规范
+// https://promisesaplus.com/
+
 const PENDING = 0,
 	FULFILLED = 1,
 	REJECTED = 2
@@ -141,11 +144,32 @@ class Promise {
 	}
 	static race(promises) {
 		if (!Array.isArray(promises)) throw TypeError('必须传入一个数组')
+
 		return new this((resolve, reject) => {
 			let i = 0,
 				promise
 			for (; (promise = promises[i++]); ) {
 				promise.then(resolve, reject)
+			}
+		})
+	}
+	static allSettled(promises) {
+		if (!Array.isArray(promises)) throw TypeError('必须传入一个数组')
+		function _pusher(resolve, res, len, value) {
+			res.push(value)
+			if (res.length === len) return resolve(res)
+			return value
+		}
+		return new this((resolve, reject) => {
+			let i = 0,
+				len = promises.length,
+				promise,
+				res = []
+			const pusher1 = _pusher.bind(null, resolve, res, len)
+			const pusher2 = _pusher.bind(null, resolve, res, len)
+
+			for (; (promise = promises[i++]); ) {
+				promise.then(pusher1, pusher2)
 			}
 		})
 	}
@@ -186,24 +210,33 @@ function resolveThenable(promise, handler, resolve, reject) {
 	}, reject)
 }
 
-const p = new Promise((resolve, reject) => {
+const p1 = Promise.resolve(1)
+const p2 = Promise.reject(2)
+const p3 = new Promise(resolve => {
 	setTimeout(() => {
-		reject(1)
+		resolve(3)
 	}, 1000)
 })
-p.finally(() => {
-	console.log('finally')
+const p4 = new Promise((_, reject) => {
+	setTimeout(() => {
+		reject(4)
+	}, 2000)
+})
+
+const p = Promise.allSettled([p1, p2, p3, p4])
+p.then(val => {
+	console.log(val)
 }).catch(err => {
 	console.log(err)
 })
 
-module.exports = {
-	deferred() {
-		const p = {}
-		p.promise = new Promise((resolve, reject) => {
-			p.resolve = resolve
-			p.reject = reject
-		})
-		return p
-	}
-}
+// module.exports = {
+// 	deferred() {
+// 		const p = {}
+// 		p.promise = new Promise((resolve, reject) => {
+// 			p.resolve = resolve
+// 			p.reject = reject
+// 		})
+// 		return p
+// 	}
+// }
