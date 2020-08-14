@@ -1,5 +1,5 @@
 'use strict'
-var immediate = require('immediate')
+var immediate = require('./node_modules/_immediate@3.3.0@immediate/lib/index')
 
 /* istanbul ignore next */
 function INTERNAL() {}
@@ -331,35 +331,27 @@ function race(iterable) {
 	}
 }
 
-const p = new Promise(resolve => {
-	console.log(1)
-	// setTimeout(() => {
-	resolve(3)
-	// }, 10)
-	Promise.resolve().then(() => console.log(4))
-})
-
-p.then(num => {
-	console.log(`打印3：${num}`)
-	return 5
-})
-	.finally(() => {
-		console.log('finally')
-		return 7
+Promise.resolve(1)
+	.then(val => {
+		console.log(val)
+		return {
+			then() {
+				console.log('then')
+				return 2
+			}
+		}
 	})
-	.then(num => {
-		console.log(`打印5：${num}`)
+	.then(val => {
+		console.log(val)
 	})
 
-console.log(2)
-
-p.then(num => {
-	console.log(`打印3：${num}`)
-	return 6
-})
-	.finally(() => {
-		console.log('-------')
-	})
-	.then(num => {
-		console.log(`打印6：${num}`)
-	})
+module.exports = {
+	deferred() {
+		const p = {}
+		p.promise = new Promise((resolve, reject) => {
+			p.resolve = resolve
+			p.reject = reject
+		})
+		return p
+	}
+}
